@@ -13,8 +13,8 @@ public class Consumer extends Thread{
               this.artist=artist;
           }
          Random r=new Random();
-         int max=4321;
-         int min=4320;
+         int max=12345;
+         int min=54319;
          int port=new Random().nextBoolean() ? max : min;
 
          public void run(){
