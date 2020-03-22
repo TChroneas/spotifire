@@ -1,10 +1,18 @@
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.*;
+import java.sql.Struct;
+import java.util.ArrayList;
+import java.util.List;
 
-public class Broker extends Node implements Runnable{
+public class Broker extends Node implements Runnable, Serializable {
+    private static List<Publisher> registeredpublishers = new ArrayList<Publisher>();
+    private static List<Broker> registeredConsumer = new ArrayList<Broker>();
 
     public Integer port;
     public Broker(Integer port){
@@ -15,11 +23,27 @@ public class Broker extends Node implements Runnable{
     Socket connection = null;
     String ip="127.0.0.1";
     String g;
+    BigInteger myKeys;
+    ObjectInputStream in;
+    ObjectOutputStream out;
+    String f;
+    BigInteger theirKeys;
+
+
 
 
 
 
     public void run(){
+        calculateKeys();
+        Node.getBrokers().add(this);
+        openServer();
+
+
+
+
+    }
+    void calculateKeys(){
         String g =ip+ (port != null ? port.toString() : null);
         MessageDigest m = null;
         try {
@@ -30,32 +54,28 @@ public class Broker extends Node implements Runnable{
         m.reset();
         m.update(g.getBytes());
         byte[] digest = m.digest();
-        BigInteger bigInt = new BigInteger(1,digest);
-        String hashtext = bigInt.toString(16);
+        myKeys = new BigInteger(1,digest);
         BigInteger a=new BigInteger("25");
-        bigInt=bigInt.mod(a);
-        System.out.println(bigInt);
-        Node.getBrokers().add(this);
-        System.out.println(g);
-
-
-        openServer();
-
-
-
+        myKeys=myKeys.mod(a);
+        System.out.println(myKeys);
 
     }
-    void openServer() {
+    void openServer()throws NullPointerException {
         try {
             providerSocket = new ServerSocket(this.port, 10);
             while (true) {
+                acceptConnection();
+                BrokerHandler handler=new BrokerHandler(connection,this);
 
-                connection = providerSocket.accept();
-                System.out.println("client connected.");
+
+
+
+
+
+
 
 
             }
-
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -65,6 +85,20 @@ public class Broker extends Node implements Runnable{
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }
+
+
+        }
+    }
+
+    void acceptConnection()throws NullPointerException {
+        try {
+            connection = providerSocket.accept();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("client connected.");
+        {
 
 
         }
