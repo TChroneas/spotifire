@@ -22,8 +22,8 @@ public class BrokerHandler extends Thread implements Serializable {
         Stopcon=broker.getConnection();
         try {
 
-            in = new ObjectInputStream(broker.getConnection().getInputStream());
-            out =new ObjectOutputStream(broker.getConnection().getOutputStream());
+            in = new ObjectInputStream(Stopcon.getInputStream());
+            out =new ObjectOutputStream(Stopcon.getOutputStream());
             out.flush();
             try {
                 this.request=(Message)in.readObject();
@@ -61,7 +61,7 @@ public class BrokerHandler extends Thread implements Serializable {
         }
     }
 
-    public synchronized void checkBroker(Broker broker,Consumer consumer) {
+    public  void checkBroker(Broker broker,Consumer consumer) {
 
 
         int intMyKeys = broker.myKeys.intValue();
@@ -72,6 +72,13 @@ public class BrokerHandler extends Thread implements Serializable {
         if (intTheirKeys <= intMyKeys && intTheirKeys >= intMyKeys - 11) {
             consumer.Register(broker, f);
             System.out.println(broker.Name + "Client Connected and Registered");
+            Message answer=(new Message("what song would u like to listen to?"));
+            try {
+                out.writeObject(answer);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+
         } else {
             int thePort = 0;
             System.out.println(broker.Name + "Client changing server");
@@ -82,11 +89,15 @@ public class BrokerHandler extends Thread implements Serializable {
                     System.out.println(thePort);
                 }
             }
-
+            Message answer=new Message(this.f,thePort,false);
+            try {
+                out.writeObject(answer);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
             disconnect(Stopcon);
 
-            Consumer a = new Consumer(consumer.artist, thePort);
-            new ConsumerHandler(a).start();
+
         }
     }
     public  void calculateMessageKeys(Message request)  {
