@@ -8,14 +8,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class BrokerHandler extends Thread implements Serializable {
-    ObjectInputStream in;
-    ObjectOutputStream out;
-    String f;
-    BigInteger theirKeys;
-    Broker broker;
-    Object e;
-    Message request;
-    Socket Stopcon=null;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
+    private String f;
+    private BigInteger theirKeys;
+    private Broker broker;
+    private Object e;
+    private Message request;
+    private Socket Stopcon=null;
 
 
     public BrokerHandler(Broker broker) throws NullPointerException{
@@ -43,6 +43,9 @@ public class BrokerHandler extends Thread implements Serializable {
         if(this.e instanceof Consumer){
             calculateMessageKeys(this.request);
             checkBroker(this.broker,(Consumer) e);
+        }
+        else if (this.e instanceof Publisher){
+            System.out.println("This is a publisher");
         }
 
     }
