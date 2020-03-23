@@ -1,45 +1,38 @@
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.*;
-import java.sql.Struct;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class Broker extends Node implements Runnable, Serializable {
+public class Broker extends Node implements Runnable {
     private static List<Publisher> registeredpublishers = new ArrayList<Publisher>();
-    private static List<Broker> registeredConsumer = new ArrayList<Broker>();
-
+    private static List<Consumer> registeredConsumers = new ArrayList<Consumer>();
+    public static List<Consumer> GetConsumers(){
+        return registeredConsumers;
+    }
+    public String Name;
     public Integer port;
-    public Broker(Integer port){
+    public Broker(Integer port,String name){
         this.port=port;
+        this.Name=name;
     }
 
     ServerSocket providerSocket;
     Socket connection = null;
     String ip="127.0.0.1";
-    String g;
     BigInteger myKeys;
-    ObjectInputStream in;
-    ObjectOutputStream out;
-    String f;
-    BigInteger theirKeys;
-
-
-
-
-
 
     public void run(){
         calculateKeys();
         Node.getBrokers().add(this);
-        openServer();
 
 
+            openServer();
 
 
     }
@@ -65,15 +58,7 @@ public class Broker extends Node implements Runnable, Serializable {
             providerSocket = new ServerSocket(this.port, 10);
             while (true) {
                 acceptConnection();
-                BrokerHandler handler=new BrokerHandler(connection,this);
-
-
-
-
-
-
-
-
+                new BrokerHandler(this).start();
 
             }
 
@@ -85,34 +70,34 @@ public class Broker extends Node implements Runnable, Serializable {
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }
-
-
         }
     }
 
-    void acceptConnection()throws NullPointerException {
-        try {
-            connection = providerSocket.accept();
+     void  acceptConnection()throws NullPointerException {
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        System.out.println("client connected.");
-        {
+         try {
+             connection = providerSocket.accept();
 
 
-        }
-    }
+         } catch (IOException e) {
+             e.printStackTrace();
+         }
+         System.out.println("client connected.");
+         {
+
+
+         }
+     }
+     Socket getConnection(){
+     return this.connection;
+     }
+
+
     public static void main(String args[]) {
 
-        new Thread(new Broker(12345)).start();
-        new Thread(new Broker(54319)).start();
-
-
-
-
+        new Thread(new Broker(54319,"First")).start();
+        new Thread(new Broker(12320,"Second")).start();
 
 
     }
-    }
-
+}

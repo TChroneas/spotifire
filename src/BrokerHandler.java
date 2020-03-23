@@ -1,40 +1,95 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class BrokerHandler extends Thread  {
+public class BrokerHandler extends Thread implements Serializable {
     ObjectInputStream in;
     ObjectOutputStream out;
     String f;
     BigInteger theirKeys;
-    public BrokerHandler(Socket connection,Broker broker) throws NullPointerException{
+    Broker broker;
+    Object e;
+    Message request;
+    Socket Stopcon=null;
+
+
+    public BrokerHandler(Broker broker) throws NullPointerException{
+        Stopcon=broker.getConnection();
         try {
-            in = new ObjectInputStream(connection.getInputStream());
-            out =new ObjectOutputStream(connection.getOutputStream());
-            calculateMessageKeys();
-            if(theirKeys=broker.myKeys;)
+
+            in = new ObjectInputStream(broker.getConnection().getInputStream());
+            out =new ObjectOutputStream(broker.getConnection().getOutputStream());
+            out.flush();
+            try {
+                this.request=(Message)in.readObject();
+                this.f=request.artist;
+                this.e =request.entity;
+                this.broker=broker;
+
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+    }
+    public void run(){
+        if(this.e instanceof Consumer){
+            calculateMessageKeys(this.request);
+            checkBroker(this.broker,(Consumer) e);
+        }
 
     }
-
-    public  void calculateMessageKeys() throws NullPointerException {
+    public  void disconnect(Socket connection){
         try {
-            Message request=(Message)in.readObject();
-            f=request.artist;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            in.close();
+            out.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }finally {
+            try {
+                connection.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
+    }
 
+    public synchronized void checkBroker(Broker broker,Consumer consumer) {
+
+
+        int intMyKeys = broker.myKeys.intValue();
+        int intTheirKeys = theirKeys.intValue();
+        if (intTheirKeys > 23) {
+            intTheirKeys = intTheirKeys % 23;
+        }
+        if (intTheirKeys <= intMyKeys && intTheirKeys >= intMyKeys - 11) {
+            consumer.Register(broker, f);
+            System.out.println(broker.Name + "Client Connected and Registered");
+        } else {
+            int thePort = 0;
+            System.out.println(broker.Name + "Client changing server");
+            for (Broker broker1 : Node.getBrokers()) {
+                int KEYS = broker1.myKeys.intValue();
+                if (intTheirKeys <= KEYS && intTheirKeys >= KEYS - 11) {
+                    thePort = broker1.port;
+                    System.out.println(thePort);
+                }
+            }
+
+            disconnect(Stopcon);
+
+            Consumer a = new Consumer(consumer.artist, thePort);
+            new ConsumerHandler(a).start();
+        }
+    }
+    public  void calculateMessageKeys(Message request)  {
         MessageDigest m = null;
         try {
             m = MessageDigest.getInstance("MD5");
@@ -49,12 +104,5 @@ public class BrokerHandler extends Thread  {
         BigInteger mod=new BigInteger("25");
         theirKeys=theirKeys.mod(mod);
         System.out.println(theirKeys);
-
-
     }
-
-
 }
-
-
-
