@@ -36,16 +36,12 @@ public class ConsumerHandler extends Thread{
             if(check==false){
                 System.out.println("I change server");
 
-                Consumer NEW =new Consumer(answer.artist,answer.port);
-                new ConsumerHandler(NEW).start();
-                try {
-                    System.out.println("Server Changed");
-                    this.join();
-                    System.out.println("stopped");
+                this.consumer.setPort(answer.port);
+                new ConsumerHandler(this.consumer).start();
+                System.out.println("Server Changed");
+                this.interrupt();
 
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+
 
             }else{
                 System.out.println(answer.song+" of "+this.consumer.artist);
@@ -68,9 +64,9 @@ public class ConsumerHandler extends Thread{
         connect(consumer.port);
     }
     public static void main(String args[]) {
-        Consumer a=new Consumer("Kevin MacLeod");
-        Consumer b=new Consumer("Alexander Narakada");
-       // Consumer c=new Consumer("Alexander Narakada");
+        Consumer a=new Consumer("Kevin MacLeod","hello darkness");
+        Consumer b=new Consumer("Alexander Narakada","123");
+        Consumer c=new Consumer("Alexander Narakada","dunno");
 
         new ConsumerHandler(a).start();
        //new ConsumerHandler(b).start();

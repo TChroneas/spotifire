@@ -8,14 +8,17 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class BrokerHandler extends Thread implements Serializable {
-    private ObjectInputStream in;
-    private ObjectOutputStream out;
-    private String f;
-    private BigInteger theirKeys;
-    private Broker broker;
-    private Object e;
-    private Message request;
-    private Socket Stopcon=null;
+
+
+    ObjectInputStream in;
+    ObjectOutputStream out;
+    String f;
+    BigInteger theirKeys;
+    Broker broker;
+    Object e;
+    Message request;
+    Socket Stopcon=null;
+    String Song;
 
 
     public BrokerHandler(Broker broker) throws NullPointerException{
@@ -30,6 +33,7 @@ public class BrokerHandler extends Thread implements Serializable {
                 this.f=request.artist;
                 this.e =request.entity;
                 this.broker=broker;
+                this.Song=request.song;
 
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
@@ -43,13 +47,48 @@ public class BrokerHandler extends Thread implements Serializable {
         if(this.e instanceof Consumer){
             calculateMessageKeys(this.request);
             checkBroker(this.broker,(Consumer) e);
+
+        }
+        if(this.e instanceof Publisher){
+            checkPublisher((Publisher) e);
+
         }
         else if (this.e instanceof Publisher){
             System.out.println("This is a publisher");
         }
 
     }
-    public  void disconnect(Socket connection){
+    public void pull(){
+        Publisher correctPublisher = null;
+        if (broker.GetPublishers().size()!=0) {
+            for (Publisher publisher : broker.GetPublishers()) {
+                if (publisher.Artists.contains(e)) {
+                    correctPublisher = publisher;
+                }
+                Socket requestSocket = null;
+                ObjectOutputStream out = null;
+                ObjectInputStream in = null;
+
+                try {
+                    requestSocket = new Socket("127.0.0.1", correctPublisher.port);
+                    out = new ObjectOutputStream(requestSocket.getOutputStream());
+                    in = new ObjectInputStream(requestSocket.getInputStream());
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+                 Message songRequest=new Message(this.f,this.Song);
+                try {
+                    System.out.println("Fetching song");
+                    out.writeObject(songRequest);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+
+
+            }
+        }
+    }
+    public  void disconnectClient(Socket connection){
         try {
             in.close();
             out.close();
@@ -63,6 +102,21 @@ public class BrokerHandler extends Thread implements Serializable {
             }
         }
     }
+    public void checkPublisher(Publisher publisher){
+        boolean add=false;
+           if(!this.broker.GetPublishers().contains(publisher)){
+               for(String artist:publisher.Artists){
+                   if(calculateArtistKeys(artist)<=broker.myKeys.intValue()&&calculateArtistKeys(artist)>=broker.myKeys.intValue()-11){
+                       add=true;
+                   }
+               }
+               if(add){
+                   broker.GetPublishers().add(publisher);
+               }
+           }
+    }
+
+
 
     public  void checkBroker(Broker broker,Consumer consumer) {
 
@@ -80,7 +134,7 @@ public class BrokerHandler extends Thread implements Serializable {
                 out.writeObject(answer);
             } catch (IOException ex) {
                 ex.printStackTrace();
-            }
+           }
 
         } else {
             int thePort = 0;
@@ -98,10 +152,31 @@ public class BrokerHandler extends Thread implements Serializable {
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
-            disconnect(Stopcon);
+            disconnectClient(Stopcon);
 
 
         }
+    }
+    public int calculateArtistKeys(String Artist){
+        int artistKeys;
+        MessageDigest m = null;
+        try {
+            m = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        m.reset();
+        m.update(Artist.getBytes());
+        byte[] digest = m.digest();
+         BigInteger Keys = new BigInteger(1,digest);
+        BigInteger mod=new BigInteger("25");
+        Keys=Keys.mod(mod);
+        artistKeys=Keys.intValue();
+        if(artistKeys>23){
+            artistKeys=artistKeys%23;
+        }
+        return artistKeys;
+
     }
     public  void calculateMessageKeys(Message request)  {
         MessageDigest m = null;
