@@ -8,6 +8,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class BrokerHandler extends Thread implements Serializable {
+
+
     ObjectInputStream in;
     ObjectOutputStream out;
     String f;
@@ -50,6 +52,9 @@ public class BrokerHandler extends Thread implements Serializable {
         if(this.e instanceof Publisher){
             checkPublisher((Publisher) e);
 
+        }
+        else if (this.e instanceof Publisher){
+            System.out.println("This is a publisher");
         }
 
     }
