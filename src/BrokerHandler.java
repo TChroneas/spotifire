@@ -16,6 +16,7 @@ public class BrokerHandler extends Thread implements Serializable {
     Object e;
     Message request;
     Socket Stopcon=null;
+    String Song;
 
 
     public BrokerHandler(Broker broker) throws NullPointerException{
@@ -30,6 +31,7 @@ public class BrokerHandler extends Thread implements Serializable {
                 this.f=request.artist;
                 this.e =request.entity;
                 this.broker=broker;
+                this.Song=request.song;
 
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
@@ -43,6 +45,7 @@ public class BrokerHandler extends Thread implements Serializable {
         if(this.e instanceof Consumer){
             calculateMessageKeys(this.request);
             checkBroker(this.broker,(Consumer) e);
+
         }
         if(this.e instanceof Publisher){
             checkPublisher((Publisher) e);
@@ -50,7 +53,37 @@ public class BrokerHandler extends Thread implements Serializable {
         }
 
     }
-    public  void disconnect(Socket connection){
+    public void pull(){
+        Publisher correctPublisher = null;
+        if (broker.GetPublishers().size()!=0) {
+            for (Publisher publisher : broker.GetPublishers()) {
+                if (publisher.Artists.contains(e)) {
+                    correctPublisher = publisher;
+                }
+                Socket requestSocket = null;
+                ObjectOutputStream out = null;
+                ObjectInputStream in = null;
+
+                try {
+                    requestSocket = new Socket("127.0.0.1", correctPublisher.port);
+                    out = new ObjectOutputStream(requestSocket.getOutputStream());
+                    in = new ObjectInputStream(requestSocket.getInputStream());
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+                 Message songRequest=new Message(this.f,this.Song);
+                try {
+                    System.out.println("Fetching song");
+                    out.writeObject(songRequest);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+
+
+            }
+        }
+    }
+    public  void disconnectClient(Socket connection){
         try {
             in.close();
             out.close();
@@ -68,7 +101,7 @@ public class BrokerHandler extends Thread implements Serializable {
         boolean add=false;
            if(!this.broker.GetPublishers().contains(publisher)){
                for(String artist:publisher.Artists){
-                   if(calculateArtistKeys(artist)<=broker.myKeys.intValue()&&calculateArtistKeys(artist)>=calculateArtistKeys(artist)-11){
+                   if(calculateArtistKeys(artist)<=broker.myKeys.intValue()&&calculateArtistKeys(artist)>=broker.myKeys.intValue()-11){
                        add=true;
                    }
                }
@@ -91,12 +124,12 @@ public class BrokerHandler extends Thread implements Serializable {
         if (intTheirKeys <= intMyKeys && intTheirKeys >= intMyKeys - 11) {
             consumer.Register(broker, f);
             System.out.println(broker.Name + "Client Connected and Registered");
-            //Message answer=(new Message("what song would u like to listen to?"));
-          //  try {
-               // out.writeObject(answer);
-          //  } catch (IOException ex) {
-           //     ex.printStackTrace();
-        //    }
+            Message answer=(new Message("what song would u like to listen to?"));
+            try {
+                out.writeObject(answer);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+           }
 
         } else {
             int thePort = 0;
@@ -114,7 +147,7 @@ public class BrokerHandler extends Thread implements Serializable {
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
-            disconnect(Stopcon);
+            disconnectClient(Stopcon);
 
 
         }

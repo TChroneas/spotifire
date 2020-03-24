@@ -16,6 +16,10 @@ public class Message implements Serializable {
     public Message(Object entity){
         this.entity=entity;
     }
+    public Message(String artist,String song){
+        this.artist=artist;
+        this.song=song;
+    }
     public Message(String song){
         this.song=song;
     }

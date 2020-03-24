@@ -38,14 +38,10 @@ public class ConsumerHandler extends Thread{
 
                 this.consumer.setPort(answer.port);
                 new ConsumerHandler(this.consumer).start();
-                try {
-                    System.out.println("Server Changed");
-                    this.join();
-                    System.out.println("stopped");
+                System.out.println("Server Changed");
+                this.interrupt();
 
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+
 
             }else{
                 System.out.println(answer.song+" of "+this.consumer.artist);
