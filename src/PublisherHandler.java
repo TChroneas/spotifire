@@ -1,3 +1,6 @@
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,6 +20,7 @@ public class PublisherHandler  implements  Runnable{
 
     }
     public void run(){
+        connectAndNotifyBrokers();
 
 
     }
@@ -54,5 +58,32 @@ public class PublisherHandler  implements  Runnable{
         }
         return  hashKey;
 
+    }
+    void connectAndNotifyBrokers() {
+        for (Broker broker:Node.getBrokers()){
+            Socket requestSocket=null;
+            ObjectOutputStream out = null;
+            ObjectInputStream in = null;
+            int port=broker.port;
+            try {
+                requestSocket=new Socket(broker.ip,port);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                out = new ObjectOutputStream(requestSocket.getOutputStream());
+                out.writeObject(publisher.request);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                in.close();
+                out.close();
+                requestSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
     }
 }

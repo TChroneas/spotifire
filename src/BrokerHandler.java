@@ -44,6 +44,10 @@ public class BrokerHandler extends Thread implements Serializable {
             calculateMessageKeys(this.request);
             checkBroker(this.broker,(Consumer) e);
         }
+        if(this.e instanceof Publisher){
+            checkPublisher((Publisher) e);
+
+        }
 
     }
     public  void disconnect(Socket connection){
@@ -60,6 +64,21 @@ public class BrokerHandler extends Thread implements Serializable {
             }
         }
     }
+    public void checkPublisher(Publisher publisher){
+        boolean add=false;
+           if(!this.broker.GetPublishers().contains(publisher)){
+               for(String artist:publisher.Artists){
+                   if(calculateArtistKeys(artist)<=broker.myKeys.intValue()&&calculateArtistKeys(artist)>=calculateArtistKeys(artist)-11){
+                       add=true;
+                   }
+               }
+               if(add){
+                   broker.GetPublishers().add(publisher);
+               }
+           }
+    }
+
+
 
     public  void checkBroker(Broker broker,Consumer consumer) {
 
@@ -72,12 +91,12 @@ public class BrokerHandler extends Thread implements Serializable {
         if (intTheirKeys <= intMyKeys && intTheirKeys >= intMyKeys - 11) {
             consumer.Register(broker, f);
             System.out.println(broker.Name + "Client Connected and Registered");
-            Message answer=(new Message("what song would u like to listen to?"));
-            try {
-                out.writeObject(answer);
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+            //Message answer=(new Message("what song would u like to listen to?"));
+          //  try {
+               // out.writeObject(answer);
+          //  } catch (IOException ex) {
+           //     ex.printStackTrace();
+        //    }
 
         } else {
             int thePort = 0;
@@ -99,6 +118,27 @@ public class BrokerHandler extends Thread implements Serializable {
 
 
         }
+    }
+    public int calculateArtistKeys(String Artist){
+        int artistKeys;
+        MessageDigest m = null;
+        try {
+            m = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        m.reset();
+        m.update(Artist.getBytes());
+        byte[] digest = m.digest();
+         BigInteger Keys = new BigInteger(1,digest);
+        BigInteger mod=new BigInteger("25");
+        Keys=Keys.mod(mod);
+        artistKeys=Keys.intValue();
+        if(artistKeys>23){
+            artistKeys=artistKeys%23;
+        }
+        return artistKeys;
+
     }
     public  void calculateMessageKeys(Message request)  {
         MessageDigest m = null;

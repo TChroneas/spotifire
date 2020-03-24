@@ -2,18 +2,18 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.security.*;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Broker extends Node implements Runnable {
     private static List<Publisher> registeredpublishers = new ArrayList<Publisher>();
     private static List<Consumer> registeredConsumers = new ArrayList<Consumer>();
     public static List<Consumer> GetConsumers(){
         return registeredConsumers;
+    }
+    public static List<Publisher> GetPublishers(){
+        return registeredpublishers;
     }
     public String Name;
     public Integer port;
@@ -30,8 +30,6 @@ public class Broker extends Node implements Runnable {
     public void run(){
         calculateKeys();
         Node.getBrokers().add(this);
-
-
             openServer();
 
 

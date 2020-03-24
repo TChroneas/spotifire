@@ -7,25 +7,29 @@ public class Message implements Serializable {
     Boolean check=true;
     int port;
     String song;
+    MusicFile extract;
+    String songPart;
+    public Message(String songPart,MusicFile extract){
+        this.songPart=songPart;
+        this.extract=extract;
+    }
+    public Message(Object entity){
+        this.entity=entity;
+    }
     public Message(String song){
         this.song=song;
     }
-    public Message(String artist,Object entity){
+
+    public Message(String artist,Object entity,String song){
         this.artist=artist;
         this.entity=entity;
+        this.song=song;
     }
     public Message(String artist,int port,boolean check){
         this.artist=artist;
         this.port=port;
         this.check=check;
     }
-  public   BigInteger hash;
-    public void sethash( BigInteger hash){
 
-        this.hash=hash;
-    }
-    public BigInteger getHash(){
-        return this.hash;
-    }
 
 }
