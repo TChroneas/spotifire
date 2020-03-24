@@ -19,9 +19,6 @@ import org.xml.sax.helpers.DefaultHandler;
 
 public class Publisher {
     private HashMap<String,ArrayList<MusicFile>> songsByArtist;
-    private final double PERCENTAGE_VALUE=0.05;
-    ServerSocket providerSocket;
-    Socket connection = null;
     private List<Mp3File> mp3Files;
 
 
@@ -106,22 +103,23 @@ public class Publisher {
 //                  printMP3(f.getPath());
 //                  temp.add(t);
 //                }
-            Metadata metadata=getMetadata(tempfile);
-            if(metadata.get("xmpDM:artist")!=null){
-                if(tempMap.containsKey(metadata.get("xmpDM:artist"))){
-                    tempMap.get(metadata.get("xmpDM:artist")).add(new MusicFile(
-                            metadata.get("title"),metadata.get("xmpDM:artist"),metadata.get("xmpDM:album"),metadata.get("xmpDM:genre"),null
-                            //TODO mp3 to byte array
-                    ));
+                Metadata metadata=getMetadata(tempfile);
+                if(metadata.get("xmpDM:artist")!=null){
+                    if(tempMap.containsKey(metadata.get("xmpDM:artist"))){
+                        tempMap.get(metadata.get("xmpDM:artist")).add(new MusicFile(
+                                metadata.get("title"),metadata.get("xmpDM:artist"),metadata.get("xmpDM:album"),metadata.get("xmpDM:genre"),inputStreamToByteArray(new FileInputStream(tempfile))
+                                //TODO commit changes
+
+                        ));
+                    }
+                    else{
+                        ArrayList<MusicFile> tempList=new ArrayList<>();
+                        tempList.add(new MusicFile(
+                                metadata.get("title"),metadata.get("xmpDM:artist"),metadata.get("xmpDM:album"),metadata.get("xmpDM:genre"),inputStreamToByteArray(new FileInputStream(tempfile))
+                        ));
+                        tempMap.put(metadata.get("xmpDM:artist"),tempList);
+                    }
                 }
-                else{
-                    ArrayList<MusicFile> tempList=new ArrayList<>();
-                    tempList.add(new MusicFile(
-                            metadata.get("title"),metadata.get("xmpDM:artist"),metadata.get("xmpDM:album"),metadata.get("xmpDM:genre"),null
-                    ));
-                    tempMap.put(metadata.get("xmpDM:artist"),tempList);
-                }
-            }
 
 
 
@@ -135,8 +133,22 @@ public class Publisher {
 
     }
 
+    public byte[] inputStreamToByteArray(InputStream inStream) {
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        try {
+            while ((bytesRead = inStream.read(buffer)) > 0) {
+                baos.write(buffer, 0, bytesRead);
+            }
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return baos.toByteArray();
+    }
+
     public void printProgressBar(int i,int size){
-        double percentage=size*PERCENTAGE_VALUE;
         if(i%5==0)System.out.print("#");
     }
 
