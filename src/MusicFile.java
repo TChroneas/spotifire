@@ -6,14 +6,14 @@ public class MusicFile implements Serializable {
     private String artist;
     private String albumInfo;
     private String genre;
-    private byte[] musicFile;
+    private byte[] data;
 
     public MusicFile(String trackNAme, String artist, String albumInfo, String genre, byte[] musicFile) {
         this.trackNAme = trackNAme;
         this.artist = artist;
         this.albumInfo = albumInfo;
         this.genre = genre;
-        this.musicFile = musicFile;
+        this.data = musicFile;
     }
 
     public MusicFile() {
@@ -51,11 +51,11 @@ public class MusicFile implements Serializable {
         this.genre = genre;
     }
 
-    public byte[] getMusicFile() {
-        return musicFile;
+    public byte[] getData() {
+        return data;
     }
 
-    public void setMusicFile(byte[] musicFile) {
-        this.musicFile = musicFile;
+    public void setData(byte[] musicFile) {
+        this.data = musicFile;
     }
 }

@@ -93,7 +93,7 @@ public class PublisherHandler  implements  Runnable{
             }
             try {
                 out = new ObjectOutputStream(requestSocket.getOutputStream());
-                out.writeObject(publisher.request);
+
             } catch (IOException e) {
                 e.printStackTrace();
             }

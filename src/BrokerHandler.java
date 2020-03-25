@@ -62,7 +62,7 @@ public class BrokerHandler extends Thread implements Serializable {
         Publisher correctPublisher = null;
         if (broker.GetPublishers().size()!=0) {
             for (Publisher publisher : broker.GetPublishers()) {
-                if (publisher.Artists.contains(e)) {
+                if (publisher.getArtists().contains(e)) {
                     correctPublisher = publisher;
                 }
                 Socket requestSocket = null;
@@ -105,7 +105,7 @@ public class BrokerHandler extends Thread implements Serializable {
     public void checkPublisher(Publisher publisher){
         boolean add=false;
            if(!this.broker.GetPublishers().contains(publisher)){
-               for(String artist:publisher.Artists){
+               for(String artist:publisher.getArtists()){
                    if(calculateArtistKeys(artist)<=broker.myKeys.intValue()&&calculateArtistKeys(artist)>=broker.myKeys.intValue()-11){
                        add=true;
                    }
