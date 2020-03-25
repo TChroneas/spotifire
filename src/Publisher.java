@@ -18,30 +18,29 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 
-public class Publisher {
+public class Publisher implements Serializable{
     private ArrayList<String> artists;
     private static final String DIR="dataset";
+    private Message msg;
     public int port;
 
 
 
-    public Publisher(String filepath) {
-        //ToDo initialize artits list from dataset - DONE
+    public Publisher(String filepath,int port) {
+
         artists=getListofArtist(filepath);
         System.out.println("\nArtists Loaded");
+        this.port=port;
+        this.msg=new Message(this);
+        System.out.println(Node.getBrokers().size());
+
     }
 
 
     public void push() {
     }
 
-    public static void main(String args[]) {
 
-
-        Publisher p = new Publisher(DIR);
-        System.out.println();
-        p.getArtists().forEach((n)-> System.out.println(n));
-    }
 
 
 
@@ -67,5 +66,9 @@ public class Publisher {
 
     public ArrayList<String> getArtists() {
         return artists;
+    }
+
+    public Message getMsg() {
+        return msg;
     }
 }

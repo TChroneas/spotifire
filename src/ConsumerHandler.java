@@ -5,17 +5,19 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class ConsumerHandler extends Thread{
+public class ConsumerHandler extends Thread {
     Message answer;
     Boolean check;
 
 
     Consumer consumer;
-    public ConsumerHandler(Consumer consumer){
-        this.consumer=consumer;
+
+    public ConsumerHandler(Consumer consumer) {
+        this.consumer = consumer;
     }
+
     void connect(int port) {
-        Socket requestSocket=null;
+        Socket requestSocket = null;
         ObjectOutputStream out = null;
         ObjectInputStream in = null;
         try {
@@ -27,13 +29,13 @@ public class ConsumerHandler extends Thread{
             out.writeObject(consumer.request);
             in = new ObjectInputStream(requestSocket.getInputStream());
             try {
-                answer=(Message)in.readObject();
+                answer = (Message) in.readObject();
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
-             check=answer.check;
+            check = answer.check;
 
-            if(check==false){
+            if (check == false) {
                 System.out.println("I change server");
 
                 this.consumer.setPort(answer.port);
@@ -42,9 +44,8 @@ public class ConsumerHandler extends Thread{
                 this.interrupt();
 
 
-
-            }else{
-                System.out.println(answer.song+" of "+this.consumer.artist);
+            } else {
+                System.out.println(answer.song + " of " + this.consumer.artist);
             }
         } catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
@@ -60,17 +61,19 @@ public class ConsumerHandler extends Thread{
             }
         }
     }
-    public void run(){
+
+    public void run() {
         connect(consumer.port);
     }
+
     public static void main(String args[]) {
-        Consumer a=new Consumer("Kevin MacLeod","hello darkness");
-        Consumer b=new Consumer("Alexander Narakada","123");
-        Consumer c=new Consumer("Alexander Narakada","dunno");
+        Consumer a = new Consumer("Kevin MacLeod", "hello darkness");
+        Consumer b = new Consumer("Alexander Narakada", "123");
+        Consumer c = new Consumer("Alexander Narakada", "dunno");
 
         new ConsumerHandler(a).start();
-       //new ConsumerHandler(b).start();
-      //  new ConsumerHandler(c).start();
+        //new ConsumerHandler(b).start();
+        //  new ConsumerHandler(c).start();
 
     }
 }

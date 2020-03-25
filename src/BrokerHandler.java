@@ -48,6 +48,7 @@ public class BrokerHandler extends Thread implements Serializable {
             calculateMessageKeys(this.request);
             checkBroker(this.broker,(Consumer) e);
 
+
         }
         if(this.e instanceof Publisher){
             checkPublisher((Publisher) e);

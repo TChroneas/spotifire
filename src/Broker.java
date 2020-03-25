@@ -30,6 +30,7 @@ public class Broker extends Node implements Runnable {
     public void run(){
         calculateKeys();
         Node.getBrokers().add(this);
+        System.out.println(Node.getBrokers().size());
             openServer();
 
 

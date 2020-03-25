@@ -93,10 +93,7 @@ public class PublisherServerHandler extends Thread {
         return baos.toByteArray();
     }
 
-    public static void main(String []args){
-         PublisherServerHandler psh=new PublisherServerHandler(new PublisherHandler(new Publisher("dataset")));
-         psh.push();
-    }
+
 
 
 
