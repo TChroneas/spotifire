@@ -71,12 +71,12 @@ public class BrokerHandler extends Thread implements Serializable {
                     correctPublisher = publisher;
 
                     Socket requestSocket = null;
-                    ObjectOutputStream out = null;
-                    ObjectInputStream in = null;
+                    ObjectOutputStream publisherOut = null;
+                    ObjectInputStream publisherIn = null;
 
                     try {
                         requestSocket = new Socket("127.0.0.1", correctPublisher.port);
-                        out = new ObjectOutputStream(requestSocket.getOutputStream());
+                        publisherOut = new ObjectOutputStream(requestSocket.getOutputStream());
 
                     } catch (IOException ex) {
                         ex.printStackTrace();
@@ -84,14 +84,15 @@ public class BrokerHandler extends Thread implements Serializable {
                      Message songRequest=new Message(request.artist,request.song);
                     try {
                         System.out.println("Fetching song");
-                        out.writeObject(songRequest);
-                        in = new ObjectInputStream(requestSocket.getInputStream());
+                        publisherOut.writeObject(songRequest);
+                        publisherIn = new ObjectInputStream(requestSocket.getInputStream());
                         while(true) {
-                            Message msg = (Message) in.readObject();
+                            Message msg = (Message) publisherIn.readObject();
 
                             System.out.println("Pushing\n"+msg.toString()+"\nto"+tempConsumer.port+"\n");
                             if(msg.getTransfer()==false){
                                 System.out.println("Song Received");
+                                push(tempConsumer,msg);
                                 break;
                             }
                             push(tempConsumer,msg);
@@ -116,12 +117,9 @@ public class BrokerHandler extends Thread implements Serializable {
 
     public void push(Consumer consumer,Message message){
 
-        ObjectOutputStream out = null;
-        ObjectInputStream in = null;
 
         try{
-            out = new ObjectOutputStream(Stopcon.getOutputStream());
-            out.flush();
+
             out.writeObject(message);
         } catch (IOException e){
             e.printStackTrace();

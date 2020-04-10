@@ -1,4 +1,5 @@
-import java.io.Serializable;
+import java.io.*;
+import java.util.Arrays;
 
 public class MusicFile implements Serializable {
 
@@ -57,5 +58,28 @@ public class MusicFile implements Serializable {
 
     public void setData(byte[] musicFile) {
         this.data = musicFile;
+    }
+
+    public void stitchByteArray(byte[] stitch){
+        byte[] tempArray= Arrays.copyOf(this.data,data.length+stitch.length);
+        for (int i=data.length,j=0;i<tempArray.length;i++,j++){
+            tempArray[i]=stitch[j];
+        }
+
+        this.data=tempArray;
+
+    }
+
+    public void saveFileLocally(){
+        try{
+            OutputStream bos=new BufferedOutputStream(new FileOutputStream(new File(trackNAme+".mp3")));
+            for(int i=0;i<this.data.length;i++){
+                bos.write(this.data[i]);
+            }
+        } catch (FileNotFoundException e){
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

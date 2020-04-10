@@ -43,9 +43,18 @@ public class ConsumerHandler extends Thread {
 
             } else {
                 System.out.println(answer.song + " of " + this.consumer.artist);
+                MusicFile tempMusicFile=new MusicFile();
+                int i=0;
                 while (true){
                     try {
                         Message message = (Message) in.readObject();
+                        if(message.getTransfer()==true){
+                            tempMusicFile.setData(message.getByteChunk());
+                            tempMusicFile.setTrackNAme(this.consumer.song+" "+i);
+                            tempMusicFile.saveFileLocally();
+                            i++;
+                        }
+                        System.out.println(message.toString());
                         if(message.getTransfer()==false){
                             System.out.println("Song Received");
                             break;
@@ -56,6 +65,9 @@ public class ConsumerHandler extends Thread {
                         e.printStackTrace();
                     }
                 }
+
+
+
 
             }
         } catch (UnknownHostException unknownHost) {
@@ -74,6 +86,8 @@ public class ConsumerHandler extends Thread {
             }
         }
     }
+
+
 
     public void run() {
         connect(consumer.port);

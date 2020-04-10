@@ -84,4 +84,8 @@ public class Message implements Serializable {
     public boolean getTransfer() {
         return transfer;
     }
+
+    public byte[] getByteChunk() {
+        return byteChunk;
+    }
 }
