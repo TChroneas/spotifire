@@ -1,33 +1,20 @@
 import com.mpatric.mp3agic.*;
 
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Scanner;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.mp3.Mp3Parser;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 
 public class Publisher implements Serializable{
     private ArrayList<String> artists;
-    private static final String DIR="dataset";
+    private String dir;
     private Message msg;
     public int port;
 
 
 
     public Publisher(String filepath,int port) {
-
+        this.dir=filepath;
         artists=getListofArtist(filepath);
         System.out.println("\nArtists Loaded");
         this.port=port;
@@ -58,6 +45,9 @@ public class Publisher implements Serializable{
         return tempList;
     }
 
+    public  String getDir() {
+        return dir;
+    }
 
     public void printProgressBar(int i) {
         if (i % 5 == 0) System.out.print("#");

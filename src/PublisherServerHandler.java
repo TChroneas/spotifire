@@ -58,13 +58,13 @@ public class PublisherServerHandler extends PublisherHandler{
          //InputStream checks chunk size if chunk.size<512 end;
         MusicFile song=null;
 
-        song = importMusicFile(message.song, "dataset2");
+        song = importMusicFile(message.song, this.publisher.getDir());
 
 
          Message tempmsg=null;
 
         try {
-            for (int i = 0; i < song.getData().length/CHUNK_SIZE;i++ ) {
+            for (int i = 0; i <= song.getData().length/CHUNK_SIZE;i++ ) {
                 // TODO Transfer Correctly the last chunk
                 byte[] chunk=extractByteChunk(i,song.getData());
 
@@ -119,7 +119,10 @@ public class PublisherServerHandler extends PublisherHandler{
             }
         }
         else{
-            chunk=new byte[song.length-((i-1)*CHUNK_SIZE)];
+            chunk=new byte[song.length-((i)*CHUNK_SIZE)];
+            for (int j=0;j<song.length-((i)*CHUNK_SIZE);j++){
+                chunk[j]=song[(i*CHUNK_SIZE)+j];
+            }
         }
 
         return chunk;
