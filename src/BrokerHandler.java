@@ -6,13 +6,14 @@ import java.math.BigInteger;
 import java.net.Socket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class BrokerHandler extends Thread implements Serializable {
 
 
     ObjectInputStream in;
     ObjectOutputStream out;
-    String f;
+    String artistName;
     BigInteger theirKeys;
     Broker broker;
     Object e;
@@ -30,7 +31,7 @@ public class BrokerHandler extends Thread implements Serializable {
             out.flush();
             try {
                 this.request=(Message)in.readObject();
-                this.f=request.artist;
+                this.artistName=request.artist;
                 this.e =request.entity;
                 this.broker=broker;
                 this.Song=request.song;
@@ -47,48 +48,87 @@ public class BrokerHandler extends Thread implements Serializable {
         if(this.e instanceof Consumer){
             calculateMessageKeys(this.request);
             checkBroker(this.broker,(Consumer) e);
+            pull(this.request);
 
 
         }
-        if(this.e instanceof Publisher){
+        else if(this.e instanceof Publisher){
             checkPublisher((Publisher) e);
+            System.out.println("This is a publisher");
 
         }
-        else if (this.e instanceof Publisher){
-            System.out.println("This is a publisher");
-        }
+//        else if (this.e instanceof Publisher){
+//
+////        }
 
     }
-    public void pull(){
+    public synchronized void pull(Message request){
         Publisher correctPublisher = null;
+        Consumer tempConsumer=(Consumer)e;
         if (broker.GetPublishers().size()!=0) {
             for (Publisher publisher : broker.GetPublishers()) {
-                if (publisher.getArtists().contains(e)) {
+                if (publisher.getArtists().contains(tempConsumer.artist)) {
                     correctPublisher = publisher;
-                }
-                Socket requestSocket = null;
-                ObjectOutputStream out = null;
-                ObjectInputStream in = null;
 
-                try {
-                    requestSocket = new Socket("127.0.0.1", correctPublisher.port);
-                    out = new ObjectOutputStream(requestSocket.getOutputStream());
-                    in = new ObjectInputStream(requestSocket.getInputStream());
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-                 Message songRequest=new Message(this.f,this.Song);
-                try {
-                    System.out.println("Fetching song");
-                    out.writeObject(songRequest);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+                    Socket requestSocket = null;
+                    ObjectOutputStream out = null;
+                    ObjectInputStream in = null;
+
+                    try {
+                        requestSocket = new Socket("127.0.0.1", correctPublisher.port);
+                        out = new ObjectOutputStream(requestSocket.getOutputStream());
+
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                     Message songRequest=new Message(request.artist,request.song);
+                    try {
+                        System.out.println("Fetching song");
+                        out.writeObject(songRequest);
+                        in = new ObjectInputStream(requestSocket.getInputStream());
+                        while(true) {
+                            Message msg = (Message) in.readObject();
+
+                            System.out.println("Pushing\n"+msg.toString()+"\nto"+tempConsumer.port+"\n");
+                            if(msg.getTransfer()==false){
+                                System.out.println("Song Received");
+                                break;
+                            }
+                            push(tempConsumer,msg);
+                        }
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                    catch (ClassNotFoundException e){
+                        e.printStackTrace();
+                    } catch (NullPointerException e){
+                        e.printStackTrace();
+                    }
+
+                    System.out.println("Whole Song Transferred!");
+                    break;
                 }
 
 
             }
         }
     }
+
+    public void push(Consumer consumer,Message message){
+
+        ObjectOutputStream out = null;
+        ObjectInputStream in = null;
+
+        try{
+            out = new ObjectOutputStream(Stopcon.getOutputStream());
+            out.flush();
+            out.writeObject(message);
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+
+    }
+
     public  void disconnectClient(Socket connection){
         try {
             in.close();
@@ -128,7 +168,7 @@ public class BrokerHandler extends Thread implements Serializable {
             intTheirKeys = intTheirKeys % 23;
         }
         if (intTheirKeys <= intMyKeys && intTheirKeys >= intMyKeys - 11) {
-            consumer.Register(broker, f);
+            consumer.Register(broker, artistName);
             System.out.println(broker.Name + "Client Connected and Registered");
             Message answer=(new Message("what song would u like to listen to?"));
             try {
@@ -147,7 +187,7 @@ public class BrokerHandler extends Thread implements Serializable {
                     System.out.println(thePort);
                 }
             }
-            Message answer=new Message(this.f,thePort,false);
+            Message answer=new Message(this.artistName,thePort,false);
             try {
                 out.writeObject(answer);
             } catch (IOException ex) {
@@ -188,7 +228,7 @@ public class BrokerHandler extends Thread implements Serializable {
         }
 
         m.reset();
-        m.update(f.getBytes());
+        m.update(artistName.getBytes());
         byte[] digest = m.digest();
         theirKeys = new BigInteger(1,digest);
         BigInteger mod=new BigInteger("25");

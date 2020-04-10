@@ -1,7 +1,4 @@
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -46,6 +43,20 @@ public class ConsumerHandler extends Thread {
 
             } else {
                 System.out.println(answer.song + " of " + this.consumer.artist);
+                while (true){
+                    try {
+                        Message message = (Message) in.readObject();
+                        if(message.getTransfer()==false){
+                            System.out.println("Song Received");
+                            break;
+                        }
+                    }catch (ClassNotFoundException e){
+                        e.printStackTrace();
+                    }catch (EOFException e){
+                        e.printStackTrace();
+                    }
+                }
+
             }
         } catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
@@ -53,6 +64,8 @@ public class ConsumerHandler extends Thread {
             ioException.printStackTrace();
         } finally {
             try {
+
+
                 in.close();
                 out.close();
                 requestSocket.close();
@@ -67,7 +80,7 @@ public class ConsumerHandler extends Thread {
     }
 
     public static void main(String args[]) {
-        Consumer a = new Consumer("Kevin MacLeod", "hello darkness");
+        Consumer a = new Consumer("Kevin MacLeod", "After the End.mp3");
         Consumer b = new Consumer("Alexander Narakada", "123");
         Consumer c = new Consumer("Alexander Narakada", "dunno");
 

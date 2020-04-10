@@ -15,6 +15,7 @@ public class Broker extends Node implements Runnable {
     public static List<Publisher> GetPublishers(){
         return registeredpublishers;
     }
+    private boolean transfer=true;
     public String Name;
     public Integer port;
     public Broker(Integer port,String name){
@@ -99,4 +100,41 @@ public class Broker extends Node implements Runnable {
 
 
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

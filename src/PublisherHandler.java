@@ -14,6 +14,10 @@ public class PublisherHandler extends Node implements Runnable{
     int port;
     ServerSocket providerSocket;
     Socket Connection;
+    Socket requestSocket;
+    ObjectOutputStream out ;
+    ObjectInputStream in ;
+    Message message;
 
     public PublisherHandler(Publisher publisher) {
         this.publisher = publisher;
@@ -23,23 +27,40 @@ public class PublisherHandler extends Node implements Runnable{
 
     public void run() {
         connectAndNotifyBrokers();
-        //openServer();
+        openServer();
 
     }
 
     void openServer() {
         try {
             providerSocket = new ServerSocket(publisher.port, 10);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+        int i=1;
         while (true) {
             try {
                 Connection = providerSocket.accept();
+                in=new ObjectInputStream(Connection.getInputStream());
+                message=(Message) in.readObject();
+                if(message!=null) {
+                    System.out.println(message.toString());
+                    System.out.println("Message rcv'd");
+
+                }
+
             } catch (IOException e) {
                 e.printStackTrace();
+            }catch(ClassNotFoundException e){
+                e.printStackTrace();
+            }catch (NullPointerException e){
+                System.err.println("Message Not Found" +i);
+                i++;
             }
-            new PublisherServerHandler(this).start();
+           PublisherServerHandler psh= new PublisherServerHandler(this);
+
+            psh.push();
 
 
         }
@@ -51,54 +72,16 @@ public class PublisherHandler extends Node implements Runnable{
         new Thread(new PublisherHandler(p)).start();
     }
 
-    public Socket getConnection() {
-        return this.Connection;
-    }
-    //void notifyBroker() {
-    //  for (Broker broker : Node.getBrokers()){
-    //      for (String artist:publisher.Artists){
-    //        int intBrokerKeyValue=broker.myKeys.intValue();
-    //      if(calculateKeys(artist)<=intBrokerKeyValue&&calculateKeys(artist)>=intBrokerKeyValue-11){
-    //        broker.GetPublishers().add(this.publisher);
-    //  }
 
-
-    //}
-
-    //}
-    //}
-    //  int calculateKeys(String Artist){
-    //    int hashKey;
-    //  BigInteger ArtistKeys;
-    //MessageDigest m = null;
-    //try {
-    //  m = MessageDigest.getInstance("MD5");
-    // } catch (NoSuchAlgorithmException e) {
-    //   e.printStackTrace();
-    //}
-    //m.reset();
-    //m.update(Artist.getBytes());
-    //byte[] digest = m.digest();
-    //ArtistKeys = new BigInteger(1,digest);
-    //BigInteger a=new BigInteger("25");
-    //ArtistKeys=ArtistKeys.mod(a);
-    //hashKey=ArtistKeys.intValue();
-    //if(hashKey>23){
-    //  hashKey=hashKey%23;
-    //}
-    //return  hashKey;
-
-    //}
     void connectAndNotifyBrokers() {
 
 
-            Socket requestSocket = null;
-            ObjectOutputStream out = null;
-            ObjectInputStream in = null;
+
             int port = 12320;
             try {
                 requestSocket = new Socket("127.0.0.1", port);
                 out = new ObjectOutputStream(requestSocket.getOutputStream());
+
                 System.out.println("Connection Established!");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -109,14 +92,25 @@ public class PublisherHandler extends Node implements Runnable{
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            try {
-              //  in.close();
-                out.close();
-                requestSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+//          try {
+//               in.close();
+//               out.close();
+//                requestSocket.close();
+//          }
+//          catch (IOException e) {
+//                e.printStackTrace();
+//           }
 
 
+    }
+
+    public Socket getConnection() {
+        return Connection;
+    }
+
+    public PublisherHandler(PublisherHandler p){
+        this.publisher=p.publisher;
+        this.port=p.port;
+        this.message=p.message;
     }
 }
