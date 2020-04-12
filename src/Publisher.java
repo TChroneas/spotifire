@@ -41,6 +41,7 @@ public class Publisher implements Serializable{
         System.out.println("Loading Artists");
         int i=0;
         for (File temp: dir.listFiles()){
+            System.out.println(i);
             printProgressBar(++i);
             GlobalFunctions gf=new GlobalFunctions();
             String artist=gf.getMp3Metadata(temp).get("xmpDM:artist");

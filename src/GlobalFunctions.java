@@ -28,7 +28,7 @@ public class GlobalFunctions {
             meta = metadata;
 
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+          //  e.printStackTrace();
             throw new FileNotFoundException("FileNotFound");
         } catch (IOException e) {
             e.printStackTrace();

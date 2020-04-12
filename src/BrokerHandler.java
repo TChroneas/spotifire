@@ -4,24 +4,24 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.Socket;
-import java.net.SocketException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class BrokerHandler extends Thread implements Serializable {
 
-    private boolean brokerFlag=true;
+
     ObjectInputStream in;
     ObjectOutputStream out;
     String artistName;
     BigInteger theirKeys;
-    Broker broker;
+    Broker Mybroker;
     Object e;
     Message request;
     Socket Stopcon=null;
     String Song;
-
+    boolean changeCheck=false;
+    boolean CorrectBroker=false;
 
     public BrokerHandler(Broker broker) throws NullPointerException{
         Stopcon=broker.getConnection();
@@ -34,7 +34,7 @@ public class BrokerHandler extends Thread implements Serializable {
                 this.request=(Message)in.readObject();
                 this.artistName=request.artist;
                 this.e =request.entity;
-                this.broker=broker;
+                this.Mybroker=broker;
                 this.Song=request.song;
 
             } catch (ClassNotFoundException e) {
@@ -48,14 +48,15 @@ public class BrokerHandler extends Thread implements Serializable {
     public void run(){
         if(this.e instanceof Consumer){
             calculateMessageKeys(this.request);
-            checkBroker(this.broker,(Consumer) e);
-            if(brokerFlag==true)pull(this.request);
-
+            tsekBroker(this.Mybroker,(Consumer) e);
+            if(!changeCheck) {
+                pull(this.request);
+            }
 
         }
         else if(this.e instanceof Publisher){
-            checkPublisher((Publisher) e);
-            System.out.println("This is a publisher");
+            tsekPublisher((Publisher) e);
+           // System.out.println("This is a publisher");
 
         }
 //        else if (this.e instanceof Publisher){
@@ -66,23 +67,25 @@ public class BrokerHandler extends Thread implements Serializable {
     public synchronized void pull(Message request){
         Publisher correctPublisher = null;
         Consumer tempConsumer=(Consumer)e;
-        if (broker.GetPublishers().size()!=0) {
-            for (Publisher publisher : broker.GetPublishers()) {
+        if (Mybroker.GetPublishers().size()!=0) {
+            boolean flag=false;
+            for (Publisher publisher : Mybroker.GetPublishers()) {
                 if (publisher.getArtists().contains(tempConsumer.artist)) {
                     correctPublisher = publisher;
+                    flag=true;
 
                     Socket requestSocket = null;
                     ObjectOutputStream publisherOut = null;
                     ObjectInputStream publisherIn = null;
 
                     try {
-                        requestSocket = new Socket("127.0.0.1", correctPublisher.port);
+                        requestSocket = new Socket("192.168.1.9", correctPublisher.port);
                         publisherOut = new ObjectOutputStream(requestSocket.getOutputStream());
 
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
-                     Message songRequest=new Message(request.artist,request.song);
+                    Message songRequest=new Message(request.artist,request.song);
                     try {
                         System.out.println("Fetching song");
                         publisherOut.writeObject(songRequest);
@@ -92,26 +95,35 @@ public class BrokerHandler extends Thread implements Serializable {
 
                             System.out.println("Pushing\n"+msg.toString()+"\nto"+tempConsumer.port+"\n");
                             if(msg.getTransfer()==false){
-                                System.out.println("Song Received");
+                                if(msg.song.equals("File not found")){
+                                    System.err.println("Song does not exist");
+
+                                }else if(msg.song.equals("Song not found")){
+                                    System.err.println("Song not found");
+                                }
+                                else {
+                                    System.out.println("Song Received");
+                                    System.out.println("Whole Song Transferred!");
+                                }
                                 out.writeObject(msg);
                                 break;
                             }
 
-                                out.writeObject(msg);
+                            out.writeObject(msg);
 
 
 
 
                         }
                     } catch (IOException ex) {
-                       ex.printStackTrace();
+                        ex.printStackTrace();
                     }
                     catch (ClassNotFoundException e){
                         e.printStackTrace();
                     } catch (NullPointerException e){
                         e.printStackTrace();
                     }
-                    System.out.println("Whole Song Transferred!");
+
                     break;
 
 
@@ -120,12 +132,33 @@ public class BrokerHandler extends Thread implements Serializable {
 
 
             }
+            if(!flag){
+                Message message=new Message("artist not found");
+                message.setTransfer(false);
+                try {
+                    out.writeObject(message);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
         }
+
     }
 
+    public void push(Consumer consumer,Message message){
 
+
+        try{
+
+            out.writeObject(message);
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+
+    }
 
     public  void disconnectClient(Socket connection){
+        changeCheck=true;
         try {
             in.close();
             out.close();
@@ -139,18 +172,101 @@ public class BrokerHandler extends Thread implements Serializable {
             }
         }
     }
-    public void checkPublisher(Publisher publisher){
-        boolean add=false;
-           if(!this.broker.GetPublishers().contains(publisher)){
-               for(String artist:publisher.getArtists()){
-                   if(calculateArtistKeys(artist)<=broker.myKeys.intValue()&&calculateArtistKeys(artist)>=broker.myKeys.intValue()-11){
-                       add=true;
+    public void checkPublisher(Publisher publisher) {
+        boolean add = false;
+        if (!this.Mybroker.GetPublishers().contains(publisher)) {
+            for (String artist : publisher.getArtists()) {
+                if (calculateArtistKeys(artist) <= Mybroker.myKeys.intValue() && calculateArtistKeys(artist) >= Mybroker.myKeys.intValue() - 11) {
+                    add = true;
+                }
+            }
+            if (add) {
+                Mybroker.GetPublishers().add(publisher);
+                System.out.println(Mybroker.Name+" added a publisher");
+            }
+        }
+    }
+
+    public void tsekPublisher(Publisher publisher) {
+        boolean add = false;
+        if (Node.getBrokers().get(0) == this.Mybroker) {
+            for (String artist : publisher.getArtists()){
+                System.out.println(artist+calculateArtistKeys(artist));
+                if(calculateArtistKeys(artist)<=Mybroker.myKeys.intValue()){
+                    if(!Mybroker.GetPublishers().contains(publisher)){
+                        Mybroker.GetPublishers().add(publisher);
+                        System.out.println(Mybroker.Name+" added a publisher");
+                    }
+
+                }
+            }
+        }else if(Node.getBrokers().get(1)==this.Mybroker){
+            for (String artist:publisher.getArtists()){
+                if(calculateArtistKeys(artist)<=Mybroker.myKeys.intValue()&&calculateArtistKeys(artist)>Node.getBrokers().get(0).myKeys.intValue()){
+                   if(!Mybroker.GetPublishers().contains(publisher)){
+                       Mybroker.GetPublishers().add(publisher);
+                       System.out.println(Mybroker.Name+" added a publisher");
                    }
-               }
-               if(add){
-                   broker.GetPublishers().add(publisher);
-               }
-           }
+
+                }
+            }
+        }else{
+            for (String artist:publisher.getArtists()){
+                if(calculateArtistKeys(artist)<=Mybroker.myKeys.intValue()&&calculateArtistKeys(artist)>Node.getBrokers().get(1).myKeys.intValue()){
+                    if(!Mybroker.GetPublishers().contains(publisher)){
+                        Mybroker.GetPublishers().add(publisher);
+                        System.out.println(Mybroker.Name+" added a publisher");
+                    }
+
+                }
+
+            }
+        }
+    }
+
+    public void tsekBroker(Broker broker,Consumer consumer){
+        int thePort=0;
+
+        int theirIntKeys=theirKeys.intValue();
+        System.out.println(theirIntKeys+"theirkeys");
+        if(theirIntKeys>Node.MAX.intValue()){
+            theirIntKeys=theirIntKeys%Node.MIN.intValue();
+        }
+        for(Broker broker1:Node.getBrokers()){
+            if(theirIntKeys<=broker1.myKeys.intValue()){
+                if(broker1==Mybroker){
+                    CorrectBroker=true;
+                    System.out.println("correct broker found port is"+broker.port);
+                }
+                thePort = broker1.port;
+                break;
+
+            }
+
+        }
+        if(!CorrectBroker){
+            Message answer=new Message(this.artistName,thePort,false);
+            try {
+                out.writeObject(answer);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            System.out.println(broker.Name + "Client changing server");
+            disconnectClient(Stopcon);
+        }else{
+            consumer.Register(broker, artistName);
+            System.out.println(broker.Name + "Client Connected and Registered");
+            Message answer=(new Message("Searching song"));
+            try {
+                out.writeObject(answer);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+
+        }
+
+
+
     }
 
 
@@ -176,7 +292,6 @@ public class BrokerHandler extends Thread implements Serializable {
         } else {
             int thePort = 0;
             System.out.println(broker.Name + "Client changing server");
-            brokerFlag=false;
             for (Broker broker1 : Node.getBrokers()) {
                 int KEYS = broker1.myKeys.intValue();
                 if (intTheirKeys <= KEYS && intTheirKeys >= KEYS - 11) {
@@ -207,11 +322,11 @@ public class BrokerHandler extends Thread implements Serializable {
         m.update(Artist.getBytes());
         byte[] digest = m.digest();
          BigInteger Keys = new BigInteger(1,digest);
-        BigInteger mod=new BigInteger("25");
+        BigInteger mod=new BigInteger("35");
         Keys=Keys.mod(mod);
         artistKeys=Keys.intValue();
-        if(artistKeys>23){
-            artistKeys=artistKeys%23;
+        if(artistKeys>Node.MAX.intValue()){
+            artistKeys=artistKeys%Node.MAX.intValue();
         }
         return artistKeys;
 
@@ -228,7 +343,7 @@ public class BrokerHandler extends Thread implements Serializable {
         m.update(artistName.getBytes());
         byte[] digest = m.digest();
         theirKeys = new BigInteger(1,digest);
-        BigInteger mod=new BigInteger("25");
+        BigInteger mod=new BigInteger("35");
         theirKeys=theirKeys.mod(mod);
         System.out.println(theirKeys);
     }

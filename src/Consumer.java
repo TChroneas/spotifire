@@ -1,11 +1,14 @@
 import java.io.*;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 public class Consumer extends Node implements Serializable  {
 
     String artist;
     Random r=new Random();
-    int max=12320;
-    int min=54319;
+    List<Integer> givenList = Arrays.asList(7654, 8760, 9876);
+
+
     int port;
     Message request;
     String song;
@@ -14,7 +17,8 @@ public class Consumer extends Node implements Serializable  {
     public Consumer(String artist,String song){
         this.song=song;
               this.artist=artist;
-              this.port=new Random().nextBoolean() ? max : min;
+        Random rand = new Random();
+                this.port=givenList.get(rand.nextInt(givenList.size()));
               request= new Message(artist,this.getConsumer(),song);
           }
      public Consumer(String artist,int port){

@@ -1,7 +1,9 @@
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,13 +27,23 @@ public class Broker extends Node implements Runnable {
 
     ServerSocket providerSocket;
     Socket connection = null;
-    String ip="127.0.0.1";
+    InetAddress ip;
+
+    {
+        try {
+            ip = InetAddress.getByName("192.168.1.9");
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+    }
     BigInteger myKeys;
 
     public void run(){
         calculateKeys();
         Node.getBrokers().add(this);
-        System.out.println(Node.getBrokers().size());
+        Node.sort();
+        Node.setMinMax();
+
             openServer();
 
 
@@ -48,14 +60,15 @@ public class Broker extends Node implements Runnable {
         m.update(g.getBytes());
         byte[] digest = m.digest();
         myKeys = new BigInteger(1,digest);
-        BigInteger a=new BigInteger("25");
+        BigInteger a=new BigInteger("35");
         myKeys=myKeys.mod(a);
-        System.out.println(myKeys);
+        System.out.println(Name+" Server Hashkey is "+myKeys);
 
     }
     void openServer()throws NullPointerException {
         try {
-            providerSocket = new ServerSocket(this.port, 10);
+            providerSocket = new ServerSocket(this.port, 10,this.ip);
+
             while (true) {
                 acceptConnection();
                 new BrokerHandler(this).start();
@@ -95,8 +108,9 @@ public class Broker extends Node implements Runnable {
 
     public static void main(String args[]) {
 
-        new Thread(new Broker(54319,"First")).start();
-        new Thread(new Broker(12320,"Second")).start();
+        new Thread(new Broker(7654,"First")).start();
+        new Thread(new Broker(8760,"Second")).start();
+        new Thread(new Broker(9876,"Third")).start();
 
 
     }

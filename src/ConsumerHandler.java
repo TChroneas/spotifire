@@ -19,7 +19,7 @@ public class ConsumerHandler extends Thread {
         ObjectInputStream in = null;
         try {
 
-            requestSocket = new Socket("127.0.0.1", consumer.port);
+            requestSocket = new Socket("192.168.1.9", consumer.port);
             out = new ObjectOutputStream(requestSocket.getOutputStream());
 
             System.out.println("Message created.");
@@ -42,7 +42,7 @@ public class ConsumerHandler extends Thread {
 
 
             } else {
-                System.out.println(answer.song + " of " + this.consumer.artist);
+                System.out.println(answer.song);
                 MusicFile tempMusicFile=new MusicFile();
                 int i=0;
                 while (true){
@@ -56,9 +56,28 @@ public class ConsumerHandler extends Thread {
                         }
                         System.out.println(message.toString());
                         if(message.getTransfer()==false){
-                            System.out.println("Song Received");
-                            break;
+                            if(message.song.equals("File not found")){
+                                System.err.println("Song does not exist");
+                                break;
+                            }
+                            else if(message.song.equals("artist not found")){
+                                System.out.println("Artist not found");
+                                break;
+
+                            }
+                            else if(message.song.equals("Song not found")){
+                                System.out.println("Song not found");
+                                break;
+
+                            }
+                            else {
+                                System.out.println("Song Received");
+
+                                break;
+                            }
+
                         }
+
                     }catch (ClassNotFoundException e){
                         e.printStackTrace();
                     }catch (EOFException e){
@@ -94,13 +113,12 @@ public class ConsumerHandler extends Thread {
     }
 
     public static void main(String args[]) {
-        Consumer a = new Consumer("Kevin MacLeod", "After the End.mp3");
+        Consumer a = new Consumer("Kevin MacLeod", "City Run.mp3");
         Consumer b = new Consumer("Alexander Narakada", "123");
         Consumer c = new Consumer("Alexander Narakada", "dunno");
 
         new ConsumerHandler(a).start();
-        //new ConsumerHandler(b).start();
-        //  new ConsumerHandler(c).start();
+
 
     }
 }

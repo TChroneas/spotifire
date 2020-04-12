@@ -22,88 +22,100 @@ public class PublisherServerHandler extends PublisherHandler{
         super(publisherHandler);
         connection=publisherHandler.getConnection();
         try {
-           // in = new ObjectInputStream(connection.getInputStream());
-             out =new ObjectOutputStream(connection.getOutputStream());
-             out.flush();
-         } catch (Exception e) {
-             e.printStackTrace();
-         }
-
-
-     }
-
-     public  MusicFile importMusicFile(String songname,String dir) throws FileNotFoundException{
-         MusicFile song=null;
-
-            File songFile = new File(dir + "\\" + songname);
-            GlobalFunctions gf = new GlobalFunctions();
-            Metadata metadata = gf.getMp3Metadata(songFile);
-            try {
-                song = new MusicFile(
-                        metadata.get("title"), metadata.get("xmpDM:artist"), metadata.get("xmpDM:album"), metadata.get("xmpDM:genre"), inputStreamToByteArray(new FileInputStream(songFile)));
-            }catch (NullPointerException e){
-                e.printStackTrace();
-            }
-
-         return song;
-     }
-
-     public synchronized void push(){
-         System.out.println("\n\nPushing song *insert_name_here*");
-         //Todo push byte array on intervals
-         //Todo 512kb size chunks-DONE
-         //InputStream checks chunk size if chunk.size<512 end;
-        MusicFile song=null;
-         Message tempmsg=null;
-        try {
-            song = importMusicFile(message.song, this.publisher.getDir());
-            try {
-                for (int i = 0; i <= song.getData().length/CHUNK_SIZE;i++ ) {
-                    // TODO Transfer Correctly the last chunk
-                    byte[] chunk=extractByteChunk(i,song.getData());
-
-                    tempmsg = new Message(chunk);
-                    out.writeObject(tempmsg);
-                    Thread.sleep(1000);
-                    System.out.println("CHUNK :"+tempmsg.toString()+" Sent");
-
-                }
-                tempmsg=new Message("END");
-                tempmsg.setTransfer(false);
-                out.writeObject(tempmsg);
-//            out.flush();
-                //           out.close();
-                System.out.println("\n\nSong Sent");
-            }catch(IOException e){
-                e.printStackTrace();
-            }catch (InterruptedException e){
-                e.printStackTrace();
-            }
-
-        }catch (FileNotFoundException ex ){
-            System.err.println("File Not Found!!!");
-            tempmsg=new Message("File not found");
-            tempmsg.setTransfer(false);
-            try {
-                out.writeObject(tempmsg);
-            }catch (IOException e){
-                e.printStackTrace();
-            }
-        }catch (NullPointerException e){
+            // in = new ObjectInputStream(connection.getInputStream());
+            out =new ObjectOutputStream(connection.getOutputStream());
+            out.flush();
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
 
+    }
+
+    public  MusicFile importMusicFile(String songname,String dir) throws FileNotFoundException{
+        MusicFile song=null;
+
+        File songFile = new File(dir + "\\" + songname);
+        GlobalFunctions gf = new GlobalFunctions();
+        Metadata metadata = gf.getMp3Metadata(songFile);
+        try {
+            song = new MusicFile(
+                    metadata.get("title"), metadata.get("xmpDM:artist"), metadata.get("xmpDM:album"), metadata.get("xmpDM:genre"), inputStreamToByteArray(new FileInputStream(songFile)));
+        }catch (NullPointerException e){
+            e.printStackTrace();
+        }
+
+        return song;
+    }
+
+    public synchronized void push(){
+       // System.out.println("\n\nPushing song *insert_name_here*");
+        //Todo push byte array on intervals
+        //Todo 512kb size chunks-DONE
+        //InputStream checks chunk size if chunk.size<512 end;
+        MusicFile song=null;
+        Message tempmsg=null;
+        try {
+            song = importMusicFile(message.song, this.publisher.getDir());
+            if (message.song.equals(song.getTrackNAme()) && message.artist.equals(song.getArtist())) {
+                try {
+                    for (int i = 0; i <= song.getData().length / CHUNK_SIZE; i++) {
+                        // TODO Transfer Correctly the last chunk
+                        byte[] chunk = extractByteChunk(i, song.getData());
+
+                        tempmsg = new Message(chunk);
+                        out.writeObject(tempmsg);
+                        Thread.sleep(1000);
+                        System.out.println("CHUNK :" + tempmsg.toString() + " Sent");
+
+                    }
+                    tempmsg = new Message("END");
+                    tempmsg.setTransfer(false);
+                    out.writeObject(tempmsg);
+//            out.flush();
+                    //           out.close();
+                    System.out.println("\n\nSong Sent");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }else{
+                System.err.println("Song not found!!!");
+                tempmsg = new Message("Song not found");
+                tempmsg.setTransfer(false);
+                try {
+                    out.writeObject(tempmsg);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            }catch(FileNotFoundException ex ){
+                System.err.println("File Not Found!!!");
+                tempmsg = new Message("File not found");
+                tempmsg.setTransfer(false);
+                try {
+                    out.writeObject(tempmsg);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }catch(NullPointerException e){
+                e.printStackTrace();
+            }
 
 
 
 
-     }
+
+
+
+    }
 
 
 
 
-     public static byte[] inputStreamToByteArray(InputStream inStream) {
+    public static byte[] inputStreamToByteArray(InputStream inStream) {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] buffer = new byte[8192];
