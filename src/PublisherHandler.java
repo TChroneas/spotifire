@@ -67,7 +67,7 @@ public class PublisherHandler extends Node implements Runnable{
     }
 
     public static void main(String[] args) {
-        Publisher p = new Publisher("dataset2", 1234);
+        Publisher p = new Publisher("dataset", 1234);
         System.out.println();
         new Thread(new PublisherHandler(p)).start();
     }

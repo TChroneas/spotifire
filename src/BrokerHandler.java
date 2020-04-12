@@ -4,13 +4,14 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class BrokerHandler extends Thread implements Serializable {
 
-
+    private boolean brokerFlag=true;
     ObjectInputStream in;
     ObjectOutputStream out;
     String artistName;
@@ -48,7 +49,7 @@ public class BrokerHandler extends Thread implements Serializable {
         if(this.e instanceof Consumer){
             calculateMessageKeys(this.request);
             checkBroker(this.broker,(Consumer) e);
-            pull(this.request);
+            if(brokerFlag==true)pull(this.request);
 
 
         }
@@ -92,22 +93,29 @@ public class BrokerHandler extends Thread implements Serializable {
                             System.out.println("Pushing\n"+msg.toString()+"\nto"+tempConsumer.port+"\n");
                             if(msg.getTransfer()==false){
                                 System.out.println("Song Received");
-                                push(tempConsumer,msg);
+                                out.writeObject(msg);
                                 break;
                             }
-                            push(tempConsumer,msg);
+
+                                out.writeObject(msg);
+
+
+
+
                         }
                     } catch (IOException ex) {
-                        ex.printStackTrace();
+                       ex.printStackTrace();
                     }
                     catch (ClassNotFoundException e){
                         e.printStackTrace();
                     } catch (NullPointerException e){
                         e.printStackTrace();
                     }
-
                     System.out.println("Whole Song Transferred!");
                     break;
+
+
+
                 }
 
 
@@ -115,17 +123,7 @@ public class BrokerHandler extends Thread implements Serializable {
         }
     }
 
-    public void push(Consumer consumer,Message message){
 
-
-        try{
-
-            out.writeObject(message);
-        } catch (IOException e){
-            e.printStackTrace();
-        }
-
-    }
 
     public  void disconnectClient(Socket connection){
         try {
@@ -178,6 +176,7 @@ public class BrokerHandler extends Thread implements Serializable {
         } else {
             int thePort = 0;
             System.out.println(broker.Name + "Client changing server");
+            brokerFlag=false;
             for (Broker broker1 : Node.getBrokers()) {
                 int KEYS = broker1.myKeys.intValue();
                 if (intTheirKeys <= KEYS && intTheirKeys >= KEYS - 11) {

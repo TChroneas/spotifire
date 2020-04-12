@@ -15,7 +15,12 @@ public class Publisher implements Serializable{
 
     public Publisher(String filepath,int port) {
         this.dir=filepath;
-        artists=getListofArtist(filepath);
+        try {
+            artists = getListofArtist(filepath);
+        }catch (FileNotFoundException e){
+            System.err.println(filepath);
+            e.printStackTrace();
+        }
         System.out.println("\nArtists Loaded");
         this.port=port;
         this.msg=new Message(this);
@@ -30,7 +35,7 @@ public class Publisher implements Serializable{
 
 
 
-    public ArrayList<String> getListofArtist(String filepath){
+    public ArrayList<String> getListofArtist(String filepath) throws FileNotFoundException{
         ArrayList<String> tempList = new ArrayList<>();
         File dir=new File(filepath);
         System.out.println("Loading Artists");
