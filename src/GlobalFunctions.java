@@ -14,7 +14,7 @@ public class GlobalFunctions {
     public GlobalFunctions() {
     }
 
-    public  Metadata getMp3Metadata(File file) {
+    public  Metadata getMp3Metadata(File file) throws FileNotFoundException {
         Metadata meta = null;
         try {
 
@@ -28,7 +28,8 @@ public class GlobalFunctions {
             meta = metadata;
 
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+          //  e.printStackTrace();
+            throw new FileNotFoundException("FileNotFound");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (SAXException e) {

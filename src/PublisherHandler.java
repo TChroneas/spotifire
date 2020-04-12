@@ -2,15 +2,27 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PublisherHandler extends Node implements Runnable{
     Publisher publisher;
     ServerSocket socket;
-    String ip = "127.0.0.1";
+    InetAddress ip;
+
+    {
+        try {
+            ip = InetAddress.getByName("192.168.1.9");
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+    }
     int port;
     ServerSocket providerSocket;
     Socket Connection;
@@ -33,7 +45,7 @@ public class PublisherHandler extends Node implements Runnable{
 
     void openServer() {
         try {
-            providerSocket = new ServerSocket(publisher.port, 10);
+            providerSocket = new ServerSocket(publisher.port, 10,this.ip);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -67,7 +79,7 @@ public class PublisherHandler extends Node implements Runnable{
     }
 
     public static void main(String[] args) {
-        Publisher p = new Publisher("dataset2", 1234);
+        Publisher p = new Publisher("dataset4", 1234);
         System.out.println();
         new Thread(new PublisherHandler(p)).start();
     }
@@ -77,9 +89,24 @@ public class PublisherHandler extends Node implements Runnable{
 
 
 
-            int port = 12320;
+            int port=7654;
+            int port2=8760;
+            int port3=9876;
+            List<Integer> ports= new ArrayList<Integer>();
+            ports.add(port);
+            ports.add(port2);
+            ports.add(port3);
+
+
+
+
+
+            for(Integer thePort:ports){
+
+
+
             try {
-                requestSocket = new Socket("127.0.0.1", port);
+                requestSocket = new Socket("192.168.1.9", thePort);
                 out = new ObjectOutputStream(requestSocket.getOutputStream());
 
                 System.out.println("Connection Established!");
@@ -92,14 +119,10 @@ public class PublisherHandler extends Node implements Runnable{
             } catch (IOException e) {
                 e.printStackTrace();
             }
-//          try {
-//               in.close();
-//               out.close();
-//                requestSocket.close();
-//          }
-//          catch (IOException e) {
-//                e.printStackTrace();
-//           }
+            }
+
+
+
 
 
     }
@@ -113,4 +136,5 @@ public class PublisherHandler extends Node implements Runnable{
         this.port=p.port;
         this.message=p.message;
     }
+
 }
